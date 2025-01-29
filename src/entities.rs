@@ -27,8 +27,11 @@ impl Bird {
             self.velocity = JUMP_STRENGTH;
         }
     }
-    pub fn draw(&self) {
+    /*pub fn draw(&self) {
         draw_circle(screen_width() / 4.0, self.y, 20.0, YELLOW);
+    }*/
+    pub fn draw(&self, texture: &Texture2D) {
+        draw_texture(texture, screen_width() / 4.0 - 20.0, self.y - 20.0, WHITE);
     }
 }
 

@@ -12,6 +12,8 @@ enum GameState {
 
 #[macroquad::main("Flappy Bird")]
 async fn main() {
+    let penguin_texture = load_texture("assets/penguin.png").await.unwrap();
+    penguin_texture.set_filter(FilterMode::Nearest);
     let mut state = GameState::MainMenu;
     let mut bird = Bird::new();
     let mut pipes = vec![Pipe::new(screen_width(), rand::gen_range(50.0, 300.0))];
@@ -62,7 +64,8 @@ async fn main() {
             GameState::Playing => {
                 clear_background(SKYBLUE);
                 bird.update();
-                bird.draw();
+                //bird.draw();
+                bird.draw(&penguin_texture);
 
                 if let Some(last_pipe) = pipes.last() {
                     if last_pipe.x < screen_width() - 200.0 {
