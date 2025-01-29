@@ -6,6 +6,11 @@ const PIPE_WIDTH: f32 = 50.0;
 const PIPE_GAP: f32 = 150.0;
 const PIPE_SPEED: f32 = 2.0;
 
+enum GameState {
+    MainMenu,
+    Playing,
+}
+
 struct Bird {
     y: f32,
     velocity: f32,
@@ -58,50 +63,71 @@ impl Pipe {
 
 #[macroquad::main("Flappy Bird")]
 async fn main() {
+    let mut state = GameState::MainMenu;
     let mut bird = Bird::new();
     let mut pipes = vec![Pipe::new(screen_width(), rand::gen_range(50.0, 300.0))];
     let mut score = 0;
+    let mut high_score = 0;
 
     loop {
-        clear_background(SKYBLUE);
-        bird.update();
-        bird.draw();
+        match state {
+            GameState::MainMenu => {
+                clear_background(SKYBLUE);
+                draw_text("Flappy Bird", screen_width() / 2.0 - 80.0, screen_height() / 2.0 - 40.0, 40.0, WHITE);
+                draw_text("Press SPACE to Start", screen_width() / 2.0 - 120.0, screen_height() / 2.0, 30.0, WHITE);
+                if is_key_pressed(KeyCode::Space) {
+                    state = GameState::Playing;
+                }
+                        next_frame().await;
+            }
+            GameState::Playing => {
+				clear_background(SKYBLUE);
+				bird.update();
+				bird.draw();
 
-        if let Some(last_pipe) = pipes.last() {
-            if last_pipe.x < screen_width() - 200.0 {
-                pipes.push(Pipe::new(screen_width(), rand::gen_range(50.0, 300.0)));
+				if let Some(last_pipe) = pipes.last() {
+				    if last_pipe.x < screen_width() - 200.0 {
+				        pipes.push(Pipe::new(screen_width(), rand::gen_range(50.0, 300.0)));
+				    }
+				}
+
+				// Collect indices of pipes that should be removed
+				let mut reset_game = false;
+				let mut new_pipes = Vec::new();
+
+				for pipe in &mut pipes {
+				    pipe.update();
+				    pipe.draw();
+
+				    if pipe.collides_with(&bird) || bird.y > screen_height() {
+				        reset_game = true;
+				    } else if pipe.x + PIPE_WIDTH > 0.0 {
+				        new_pipes.push(Pipe::new(pipe.x, pipe.height));
+				    }
+				    
+				}
+				
+				score += 1;
+
+
+				if reset_game {
+				    bird = Bird::new();
+				    pipes = vec![Pipe::new(screen_width(), rand::gen_range(50.0, 300.0))];
+				    if score > high_score {
+				    	high_score = score;
+				    }
+				    score = 0;
+				} else {
+				    pipes = new_pipes;
+				}
+				
+				draw_text(&format!("Score: {}", score), 20.0, 40.0, 30.0, WHITE);
+				draw_text(&format!("High score: {}", high_score), 20.0, 80.0, 30.0, WHITE);
+
+
+				next_frame().await;
             }
         }
 
-        // Collect indices of pipes that should be removed
-        let mut reset_game = false;
-        let mut new_pipes = Vec::new();
-
-        for pipe in &mut pipes {
-            pipe.update();
-            pipe.draw();
-
-            if pipe.collides_with(&bird) || bird.y > screen_height() {
-                reset_game = true;
-            } else if pipe.x + PIPE_WIDTH > 0.0 {
-                new_pipes.push(Pipe::new(pipe.x, pipe.height));
-            }
-            
-        }
-        
-        score += 1;
-
-
-        if reset_game {
-            bird = Bird::new();
-            pipes = vec![Pipe::new(screen_width(), rand::gen_range(50.0, 300.0))];
-            score = 0;
-        } else {
-            pipes = new_pipes;
-        }
-        
-        draw_text(&format!("Score: {}", score), 20.0, 40.0, 30.0, WHITE);
-
-        next_frame().await;
     }
 }
