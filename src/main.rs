@@ -1,77 +1,13 @@
+use config::PIPE_WIDTH;
+use entities::{Bird, Pipe};
 use macroquad::prelude::*;
 
-const GRAVITY: f32 = 0.08;
-const JUMP_STRENGTH: f32 = -3.0;
-const PIPE_WIDTH: f32 = 50.0;
-const PIPE_GAP: f32 = 150.0;
-const PIPE_SPEED: f32 = 2.0;
+mod config;
+mod entities;
 
 enum GameState {
     MainMenu,
     Playing,
-}
-
-struct Bird {
-    y: f32,
-    velocity: f32,
-}
-
-struct Pipe {
-    x: f32,
-    height: f32,
-    passed: bool,
-}
-
-impl Bird {
-    fn new() -> Self {
-        Self {
-            y: screen_height() / 2.0,
-            velocity: 0.0,
-        }
-    }
-    fn update(&mut self) {
-        self.velocity += GRAVITY;
-        self.y += self.velocity;
-        if is_key_pressed(KeyCode::Space) {
-            self.velocity = JUMP_STRENGTH;
-        }
-    }
-    fn draw(&self) {
-        draw_circle(screen_width() / 4.0, self.y, 20.0, YELLOW);
-    }
-}
-
-impl Pipe {
-    fn new(x: f32, height: f32) -> Self {
-        Self {
-            x,
-            height,
-            passed: false,
-        }
-    }
-    fn update(&mut self) {
-        self.x -= PIPE_SPEED;
-    }
-    fn draw(&self) {
-        draw_rectangle(self.x, 0.0, PIPE_WIDTH, self.height, GREEN);
-        draw_rectangle(
-            self.x,
-            self.height + PIPE_GAP,
-            PIPE_WIDTH,
-            screen_height(),
-            GREEN,
-        );
-    }
-    fn collides_with(&self, bird: &Bird) -> bool {
-        let bird_x = screen_width() / 4.0;
-        let bird_radius = 20.0;
-        if bird_x + bird_radius > self.x && bird_x - bird_radius < self.x + PIPE_WIDTH {
-            if bird.y - bird_radius < self.height || bird.y + bird_radius > self.height + PIPE_GAP {
-                return true;
-            }
-        }
-        false
-    }
 }
 
 #[macroquad::main("Flappy Bird")]
@@ -81,27 +17,45 @@ async fn main() {
     let mut pipes = vec![Pipe::new(screen_width(), rand::gen_range(50.0, 300.0))];
     let mut score = 0;
     let mut high_score = 0;
+    let mut beaten = false;
 
     loop {
         match state {
             GameState::MainMenu => {
                 clear_background(SKYBLUE);
                 draw_text(
-                    "Flappy Bird",
-                    screen_width() / 2.0 - 80.0,
+                    "Flappy Penguin",
+                    screen_width() / 2.0 - 120.0,
                     screen_height() / 2.0 - 40.0,
                     40.0,
                     WHITE,
                 );
                 draw_text(
                     "Press SPACE to Start",
-                    screen_width() / 2.0 - 120.0,
+                    screen_width() / 2.0 - 130.0,
                     screen_height() / 2.0,
                     30.0,
                     WHITE,
                 );
+                draw_text(
+                    &format!("High score: {}", high_score),
+                    20.0,
+                    40.0,
+                    30.0,
+                    WHITE,
+                );
+                if beaten {
+                    draw_text(
+                        "You've beaten your high score!",
+                        screen_width() / 2.0 - 180.0,
+                        screen_height() / 2.0 + 40.0,
+                        30.0,
+                        RED,
+                    );
+                }
                 if is_key_pressed(KeyCode::Space) {
                     state = GameState::Playing;
+                    beaten = false;
                 }
                 next_frame().await;
             }
@@ -138,17 +92,19 @@ async fn main() {
                     pipes = vec![Pipe::new(screen_width(), rand::gen_range(50.0, 300.0))];
                     if score > high_score {
                         high_score = score;
+                        beaten = true;
                     }
                     score = 0;
+                    state = GameState::MainMenu;
                 } else {
                     pipes = new_pipes;
                 }
 
-                draw_text(&format!("Score: {}", score), 20.0, 40.0, 30.0, WHITE);
+                draw_text(&format!("Score: {}", score), 20.0, 80.0, 30.0, WHITE);
                 draw_text(
                     &format!("High score: {}", high_score),
                     20.0,
-                    80.0,
+                    40.0,
                     30.0,
                     WHITE,
                 );
@@ -158,4 +114,3 @@ async fn main() {
         }
     }
 }
-
