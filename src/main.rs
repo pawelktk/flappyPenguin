@@ -14,6 +14,9 @@ enum GameState {
 async fn main() {
     let penguin_texture = load_texture("assets/penguin.png").await.unwrap();
     penguin_texture.set_filter(FilterMode::Nearest);
+    let duck_texture = load_texture("assets/duck.png").await.unwrap();
+    duck_texture.set_filter(FilterMode::Nearest);
+    let mut duck = false;
     let mut state = GameState::MainMenu;
     let mut bird = Bird::new();
     let mut pipes = vec![Pipe::new(screen_width(), rand::gen_range(50.0, 300.0))];
@@ -55,6 +58,31 @@ async fn main() {
                         RED,
                     );
                 }
+                if duck {
+                    draw_texture(
+                        &duck_texture,
+                        screen_width() / 2.0 - 20.0,
+                        screen_height() / 2.0 + 80.0,
+                        WHITE,
+                    );
+                } else {
+                    draw_texture(
+                        &penguin_texture,
+                        screen_width() / 2.0 - 20.0,
+                        screen_height() / 2.0 + 80.0,
+                        WHITE,
+                    );
+                }
+                draw_text(
+                    "Choose your hero with arrow keys",
+                    screen_width() / 2.0 - 140.0,
+                    screen_height() / 2.0 + 140.0,
+                    20.0,
+                    YELLOW,
+                );
+                if is_key_pressed(KeyCode::Right) || is_key_pressed(KeyCode::Left) {
+                    duck = !duck;
+                }
                 if is_key_pressed(KeyCode::Space) {
                     state = GameState::Playing;
                     beaten = false;
@@ -65,8 +93,11 @@ async fn main() {
                 clear_background(SKYBLUE);
                 bird.update();
                 //bird.draw();
-                bird.draw(&penguin_texture);
-
+                if duck {
+                    bird.draw(&duck_texture);
+                } else {
+                    bird.draw(&penguin_texture);
+                }
                 if let Some(last_pipe) = pipes.last() {
                     if last_pipe.x < screen_width() - 200.0 {
                         pipes.push(Pipe::new(screen_width(), rand::gen_range(50.0, 300.0)));
