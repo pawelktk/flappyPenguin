@@ -14,6 +14,7 @@ struct Bird {
 struct Pipe {
     x: f32,
     height: f32,
+    passed: bool,
 }
 
 impl Bird {
@@ -34,7 +35,7 @@ impl Bird {
 
 impl Pipe {
     fn new(x: f32, height: f32) -> Self {
-        Self { x, height }
+        Self { x, height, passed: false }
     }
     fn update(&mut self) {
         self.x -= PIPE_SPEED;
@@ -59,6 +60,7 @@ impl Pipe {
 async fn main() {
     let mut bird = Bird::new();
     let mut pipes = vec![Pipe::new(screen_width(), rand::gen_range(50.0, 300.0))];
+    let mut score = 0;
 
     loop {
         clear_background(SKYBLUE);
@@ -84,14 +86,21 @@ async fn main() {
             } else if pipe.x + PIPE_WIDTH > 0.0 {
                 new_pipes.push(Pipe::new(pipe.x, pipe.height));
             }
+            
         }
+        
+        score += 1;
+
 
         if reset_game {
             bird = Bird::new();
             pipes = vec![Pipe::new(screen_width(), rand::gen_range(50.0, 300.0))];
+            score = 0;
         } else {
             pipes = new_pipes;
         }
+        
+        draw_text(&format!("Score: {}", score), 20.0, 40.0, 30.0, WHITE);
 
         next_frame().await;
     }
